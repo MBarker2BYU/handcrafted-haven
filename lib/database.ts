@@ -1,23 +1,37 @@
 import Database from 'better-sqlite3';
 import { resolve } from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 
 const dbPath = resolve(process.cwd(), 'database/handcrafted-haven.sqlite3');
-let db: Database.Database;
+let dbInstance: Database.Database | null = null;
 
 export function getDatabase(): Database.Database {
-  if (!db || !db.open) {
-    db = new Database(dbPath, {
+  if (!dbInstance || dbInstance.open === false) {
+    dbInstance = new Database(dbPath, {
       verbose: process.env.NODE_ENV === 'development' ? console.log : undefined,
     });
-    db.pragma('foreign_keys = ON');
-    
-    const initSql = readFileSync(resolve(process.cwd(), 'database/init.sql'), 'utf-8');
-    db.exec(initSql);
+
+    dbInstance.pragma('foreign_keys = ON');
+
+    // Run schema if brand new
+    const hasUsers = dbInstance.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
+    if (!hasUsers) {
+      const initSql = readFileSync(resolve(process.cwd(), 'database/init.sql'), 'utf-8');
+      dbInstance.exec(initSql);
+    }
+
+    // Auto-seed Scarlet if she doesn't exist
+    const scarlet = dbInstance.prepare("SELECT id FROM users WHERE email = ?").get('scarlet@handcraftedhaven.com');
+    if (!scarlet) {
+      const seedSql = readFileSync(resolve(process.cwd(), 'database/seed-test-artisan.sql'), 'utf-8');
+      dbInstance.exec(seedSql);
+    }
   }
-  return db;
+
+  return dbInstance;
 }
 
-export function closeDatabase(): void {
-  db?.close();
+export function closeDatabase() {
+  dbInstance?.close();
+  dbInstance = null;
 }
