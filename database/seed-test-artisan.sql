@@ -17,7 +17,7 @@ SELECT
   'Gorgeous scarlet & gray Christmas ornament – perfect for any Ohio State tree!',
   2999,
   'Home Decor',
-  '["/images/products/ornament-1.jpg","/images/products/ornament-2.jpg"]',
+  '["/images/products/ornament.webp","/images/products/ornament.webp"]',
   25,
   1
 FROM sellers s

@@ -1,87 +1,92 @@
-// app/products/[id]/page.tsx
+// app/products/[id]/page.tsx — FULL FILE WITH DARKER, BOLDER SCARLET PRICE
 import { getDatabase } from '@/lib/database';
 import type { Product } from '@/types/product';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-export default function ProductPage({ params }: { params: { id: string } }) {
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const db = getDatabase();
+
+  const productId = parseInt(id, 10);
+  if (isNaN(productId) || productId <= 0) notFound();
 
   const product = db
     .prepare(`
-      SELECT p.id, p.title, p.description, p.price_cents, p.image_urls, p.stock,
-             s.shop_name, s.bio, u.name as artisan_name
+      SELECT p.*, s.shop_name, u.name as artisan_name
       FROM products p
       JOIN sellers s ON p.seller_id = s.id
       JOIN users u ON s.user_id = u.id
       WHERE p.id = ? AND p.is_active = 1
     `)
-    .get(params.id) as (Product & { shop_name: string; bio: string; artisan_name: string }) | undefined;
+    .get(productId) as (Product & { shop_name: string; artisan_name: string }) | undefined;
 
-  if (!product) {
-    notFound();
-  }
+  if (!product) notFound();
 
   const images = JSON.parse(product.image_urls) as string[];
+  const mainImage = images[0];
   const price = (product.price_cents / 100).toFixed(2);
 
   return (
-    <>
-      <div className="container mx-auto px-6 py-12 max-w-7xl">
-        <Link href="/" className="text-scarlet hover:underline mb-8 inline-block">
-          ← Back to Home
-        </Link>
+    <div className="container mx-auto px-6 py-12 max-w-7xl">
+      <Link href="/" className="text-scarlet hover:underline mb-8 inline-block text-lg">
+        ← Back to Home
+      </Link>
 
-        <div className="grid md:grid-cols-2 gap-12">
-          {/* Image Gallery */}
-          <div>
-            <div className="bg-gray-200 border-2 border-dashed rounded-xl w-full h-96 flex items-center justify-center mb-6">
-              <span className="text-8xl">🅾️</span>
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              {images.map((img, i) => (
-                <div key={i} className="bg-gray-200 border-2 border-dashed rounded-lg h-24 flex items-center justify-center">
-                  <span className="text-4xl">🅾️</span>
-                </div>
-              ))}
-            </div>
+      <div className="grid md:grid-cols-2 gap-16">
+        <div className="space-y-6">
+          <div className="relative aspect-square rounded-2xl overflow-hidden shadow-2xl">
+            <Image
+              src={mainImage}
+              alt={product.title}
+              fill
+              priority
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
           </div>
+        </div>
 
-          {/* Product Info */}
+        <div className="flex flex-col justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">{product.title}</h1>
+            <h1 className="text-5xl font-bold text-gray-900 mb-6">{product.title}</h1>
             
-            <div className="flex items-center gap-4 mb-6">
-              <span className="text-3xl font-bold text-scarlet">${price}</span>
-              <span className="text-green-600 font-semibold">{product.stock} in stock</span>
+            <div className="flex items-center gap-6 mb-8">
+              {/* FIXED: Real Buckeye scarlet — bold, WCAG AA compliant */}
+              <span className="text-5xl font-black text-[#BB0000] drop-shadow-md">
+                ${price}
+              </span>
+              <span className="text-xl text-green-600 font-semibold">
+                {product.stock} in stock
+              </span>
             </div>
 
-            <p className="text-gray-700 text-lg leading-relaxed mb-8">
+            <p className="text-lg text-gray-700 leading-relaxed mb-10">
               {product.description}
             </p>
 
-            <button className="w-full bg-scarlet text-white py-4 rounded-lg text-xl font-bold hover:bg-red-700 transition shadow-lg">
+            <button className="w-full bg-scarlet text-white py-6 rounded-xl text-2xl font-bold hover:bg-red-700 transition shadow-xl">
               Add to Cart
             </button>
+          </div>
 
-            {/* Artisan Card */}
-            <div className="mt-12 p-6 bg-gray-50 rounded-xl">
-              <h3 className="text-xl font-bold text-scarlet mb-3">Meet the Artisan</h3>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-scarlet rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                  {product.artisan_name.charAt(0)}
-                </div>
-                <div>
-                  <p className="font-semibold text-lg">{product.artisan_name}</p>
-                  <p className="text-gray-600">{product.shop_name}</p>
-                </div>
+          <div className="mt-16 p-8 bg-gray-50 rounded-2xl border border-gray-200">
+            <h3 className="text-2xl font-bold text-scarlet mb-4">Handcrafted by</h3>
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 bg-scarlet rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                {product.artisan_name.charAt(0)}
               </div>
-              <p className="mt-4 text-gray-700 italic">"{product.bio}"</p>
+              <div>
+                <p className="text-xl font-bold">{product.artisan_name}</p>
+                <Link href={`/sellers/${product.seller_id}`} className="text-scarlet hover:underline">
+                  {product.shop_name}
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
