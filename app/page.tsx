@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getDatabase } from '@/lib/database';
 import type { Product } from '@/types/product';
 
@@ -61,10 +62,10 @@ export default function Home() {
 
             <div className="md:w-2/3 p-10">
               <h3 className="text-3xl font-bold text-scarlet mb-3">
-                {artisan?.shop_name ?? 'Loading...'}
+                {artisan?.shop_name ?? 'Scarlet\'s Scarlet Crafts'}
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                {artisan?.bio ?? 'A passionate artisan crafting Buckeye-inspired treasures.'}
+                {artisan?.bio ?? 'Passionate Ohio State artisan crafting Buckeye-inspired treasures since 2015.'}
               </p>
             </div>
           </div>
@@ -92,7 +93,7 @@ export default function Home() {
                     key={product.id}
                     className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300"
                   >
-                    {/* Placeholder image — replace with real images later */}
+                    {/* Placeholder image */}
                     <div className="bg-gray-200 border-2 border-dashed rounded-t-xl w-full h-64 flex items-center justify-center">
                       <span className="text-6xl">🅾️</span>
                     </div>
@@ -108,9 +109,12 @@ export default function Home() {
                         <span className="text-2xl font-bold text-scarlet">
                           ${price}
                         </span>
-                        <button className="bg-scarlet text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition">
+                        <Link
+                          href={`/products/${product.id}`}
+                          className="bg-scarlet text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition"
+                        >
                           View Item
-                        </button>
+                        </Link>
                       </div>
                     </div>
                   </div>
