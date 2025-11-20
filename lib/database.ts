@@ -1,4 +1,4 @@
-// lib/database.ts — FULL FINAL VERSION
+// lib/database.ts — FINAL VERSION WITH CART TABLE
 import Database from 'better-sqlite3';
 import { resolve } from 'path';
 import { readFileSync } from 'fs';
@@ -21,29 +21,29 @@ export function getDatabase(): Database.Database {
       dbInstance.exec(initSql);
     }
 
-    // Auto-seed Scarlet if she doesn't exist
+    // Auto-seed Scarlet
     const scarlet = dbInstance.prepare("SELECT id FROM users WHERE email = ?").get('scarlet@handcraftedhaven.com');
     if (!scarlet) {
       const seedSql = readFileSync(resolve(process.cwd(), 'database/seed-test-artisan.sql'), 'utf-8');
       dbInstance.exec(seedSql);
     }
 
-    // ADD THIS BLOCK — RUN REVIEWS MIGRATION ONLY ONCE
-    const hasReviewsTable = dbInstance.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='reviews'").get();
-    if (!hasReviewsTable) {
-      const reviewsMigration = readFileSync(resolve(process.cwd(), 'database/03-add-reviews.sql'), 'utf-8');
-      dbInstance.exec(reviewsMigration);
-    }
+    // ADD THIS: CREATE CART TABLE
+    dbInstance.exec(`
+      CREATE TABLE IF NOT EXISTS cart (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        quantity INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+      );
+    `);
 
-    // Seed a test review
-    const hasReview = dbInstance.prepare("SELECT 1 FROM reviews LIMIT 1").get();
-    if (!hasReview) {
-      const reviewSeed = `
-        INSERT INTO reviews (product_id, user_id, rating, review_text)
-        SELECT 1, u.id, 5, 'Absolutely stunning! Perfect Buckeye gift! Go Bucks! 🅾️'
-        FROM users u WHERE email = 'scarlet@handcraftedhaven.com';
-      `;
-      dbInstance.exec(reviewSeed);
+    // Reviews table
+    const hasReviews = dbInstance.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='reviews'").get();
+    if (!hasReviews) {
+      const reviewsSql = readFileSync(resolve(process.cwd(), 'database/03-add-reviews.sql'), 'utf-8');
+      dbInstance.exec(reviewsSql);
     }
   }
 
