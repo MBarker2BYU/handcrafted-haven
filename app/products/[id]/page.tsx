@@ -4,6 +4,7 @@ import type { Product } from '@/types/product';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import ProductReviews from './reviews';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,6 +103,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
       </div>
+      <ProductReviews productId={product.id} />      
     </div>
   );
 }

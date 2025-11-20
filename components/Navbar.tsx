@@ -20,11 +20,11 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Links */}
-          <div className="hidden md:flex items-center space-x-10">
+          {/* <div className="hidden md:flex items-center space-x-10">
             <Link href="/" className="text-white font-semibold hover:text-gray-200 transition">
               Home
             </Link>
-            <Link href="/sellers" className="text-white font-semibold hover:text-gray-200 transition">
+            <Link href="/artisans" className="text-white font-semibold hover:text-gray-200 transition">
               Artisans
             </Link>
             <Link href="/categories" className="text-white font-semibold hover:text-gray-200 transition">
@@ -33,6 +33,13 @@ export default function Navbar() {
             <Link href="/about" className="text-white font-semibold hover:text-gray-200 transition">
               About
             </Link>
+          </div> */}
+          <div className="hidden md:flex items-center space-x-10">
+            <Link href="/" className="text-white font-bold hover:text-gray-200 transition">Home</Link>
+            <Link href="/artisans" className="text-white font-bold hover:text-gray-200 transition">Artisans</Link>
+            <Link href="/categories" className="text-white font-bold hover:text-gray-200 transition">Categories</Link>
+            <Link href="/about" className="text-white font-bold hover:text-gray-200 transition">About</Link>
+            <Link href="/cart" className="text-white font-bold hover:text-gray-200 transition">Cart</Link>
           </div>
 
           {/* Cart & Mobile Menu Button */}
