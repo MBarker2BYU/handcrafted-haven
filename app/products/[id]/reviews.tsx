@@ -1,64 +1,102 @@
-// app/products/[id]/reviews.tsx — FULL FILE
+// app/products/[id]/reviews.tsx
 import { getDatabase } from '@/lib/database';
+import { revalidatePath } from 'next/cache';
 
-interface Review {
-  id: number;
-  rating: number;
-  review_text: string;
-  created_at: string;
-  name: string;
+export const dynamic = 'force-dynamic';
+
+async function addReview(formData: FormData) {
+  'use server';
+
+  const db = getDatabase();
+  const productId = formData.get('productId') as string;
+  const rating = Number(formData.get('rating'));
+  const comment = formData.get('comment') as string;
+  const reviewerName = (formData.get('name') as string)?.trim() || 'Anonymous';
+
+  db.prepare(`
+    INSERT INTO reviews (product_id, rating, comment, reviewer_name, created_at)
+    VALUES (?, ?, ?, ?, datetime('now'))
+  `).run(productId, rating, comment, reviewerName);
+
+  revalidatePath(`/products/${productId}`);
 }
 
-export default function ProductReviews({ productId }: { productId: number }) {
+export default function Reviews({ productId }: { productId: string }) {
   const db = getDatabase();
-
   const reviews = db.prepare(`
-    SELECT r.*, u.name
-    FROM reviews r
-    JOIN users u ON r.user_id = u.id
-    WHERE r.product_id = ?
-    ORDER BY r.created_at DESC
-  `).all(productId) as Review[];
-
-  const avgRating = reviews.length > 0
-    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
-    : '—';
+    SELECT * FROM reviews 
+    WHERE product_id = ? 
+    ORDER BY created_at DESC
+  `).all(productId);
 
   return (
-    <div className="mt-20 border-t pt-16">
-      <h2 className="text-4xl font-bold text-center text-scarlet mb-12">
-        Customer Reviews ({reviews.length})
+    <section className="mt-16">
+      <h2 className="text-3xl font-bold mb-8" style={{ color: '#BB0000' }}>
+        Customer Reviews
       </h2>
 
-      <div className="text-center mb-12">
-        <div className="text-6xl font-black text-[#BB0000]">{avgRating} ★</div>
-        <p className="text-xl text-gray-600 mt-4">Average Rating</p>
-      </div>
-
       {reviews.length === 0 ? (
-        <p className="text-center text-xl text-gray-600">Be the first to review this item!</p>
+        <p className="text-gray-400 italic">No reviews yet — be the first!</p>
       ) : (
-        <div className="space-y-8">
-          {reviews.map((review) => (
-            <div key={review.id} className="bg-gray-50 rounded-2xl p-8">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-xl font-bold">{review.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {new Date(review.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="text-3xl font-black text-[#BB0000]">
-                  {review.rating} ★
-                </div>
+        <div className="space-y-6 mb-12">
+          {reviews.map((r: any) => (
+            <div key={r.id} className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+              <div className="flex items-center gap-4 mb-3">
+                <span className="font-semibold">{r.reviewer_name}</span>
+                <span className="text-yellow-400">{'⭐'.repeat(r.rating)}</span>
               </div>
-              {review.review_text && (
-                <p className="text-lg text-gray-700 italic">"{review.review_text}"</p>
-              )}
+              <p className="text-gray-200">{r.comment}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                {new Date(r.created_at).toLocaleDateString()}
+              </p>
             </div>
           ))}
         </div>
       )}
-    </div>
+
+      <form action={addReview} className="bg-white/10 backdrop-blur rounded-xl p-8 border border-white/20">
+        <input name="productId" value={productId} readOnly hidden />
+
+        <div className="mb-5">
+          <label className="block text-sm font-medium mb-2">Your Name (optional)</label>
+          <input
+            name="name"
+            placeholder="Leave blank for Anonymous"
+            className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-lg focus:outline-none focus:border-[#BB0000]"
+          />
+        </div>
+
+        <div className="mb-5">
+          <label className="block text-sm font-medium mb-2">Rating</label>
+          <select
+            name="rating"
+            required
+            className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-lg focus:outline-none focus:border-[#BB0000]"
+          >
+            {[5, 4, 3, 2, 1].map(n => (
+              <option key={n} value={n}>{n} Star{n > 1 ? 's' : ''}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-sm font-medium mb-2">Your Review</label>
+          <textarea
+            name="comment"
+            required
+            rows={4}
+            placeholder="Share your thoughts..."
+            className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-lg focus:outline-none focus:border-[#BB0000]"
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full bg-[#BB0000] hover:bg-[#990000] text-white font-bold py-4 rounded-lg transition"
+        >
+          Submit Review
+        </button>
+      </form>
+    </section>
   );
 }
