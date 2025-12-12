@@ -9,8 +9,9 @@ const client = new Client({
   connectionString: process.env.DATABASE_URL,
 });
 
-export const db = drizzle(client);
+// Connect once when the module loads
+client.connect()
+  .then(() => console.log('Database connected successfully'))
+  .catch((err) => console.error('Database connection error:', err));
 
-export async function connect() {
-  await client.connect();
-}
+export const db = drizzle(client);

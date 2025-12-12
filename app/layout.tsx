@@ -1,3 +1,4 @@
+// app/layout.tsx
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -14,13 +15,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="flex flex-col min-h-screen">
-        <Navigation/>
+      <body className="flex flex-col min-h-screen bg-gray">
+        <Navigation />
 
-        {/* Main content grows to push footer down when needed */}
-        <main className="flex-1 pt-[150px]">{children}</main>
+        {/* Removed pt-[150px] - forms now center properly */}
+        <main className="flex-1">{children}</main>
 
-        {/* Footer always sticks to bottom of viewport */}
         <Footer />
       </body>
     </html>

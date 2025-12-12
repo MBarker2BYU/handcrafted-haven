@@ -1,5 +1,4 @@
-// /auth.ts   ← final version, no more TS errors
-
+// auth.ts
 import NextAuth from 'next-auth';
 import { authConfig } from './auth.config';
 import Credentials from 'next-auth/providers/credentials';
@@ -9,31 +8,33 @@ import bcrypt from 'bcrypt';
 import { db } from '@/database/db';
 import { users } from '@/database/schema';
 import { eq } from 'drizzle-orm';
-import { connect } from '@/database/db';
-
-await connect();
 
 async function getUser(email: string): Promise<User | undefined> {
-  const result = await db
-    .select({
-      id: users.id,
-      email: users.email,
-      password: users.password,
-      role: users.role,                    // ← can be string | null
-    })
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
+  try {
+    const result = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        password: users.password,
+        role: users.role,
+      })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
 
-  const row = result[0];
-  if (!row) return undefined;
+    const row = result[0];
+    if (!row) return undefined;
 
-  return {
-    id: row.id,
-    email: row.email,
-    password: row.password,
-    role: row.role ?? 'user',   // ← convert null → 'user' here
-  };
+    return {
+      id: row.id,
+      email: row.email,
+      password: row.password,
+      role: row.role ?? 'Member',
+    };
+  } catch (error) {
+    console.error('Failed to fetch user:', error);
+    throw new Error('Failed to fetch user.');
+  }
 }
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
@@ -60,9 +61,38 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         return {
           id: user.id.toString(),
           email: user.email,
-          role: user.role,                   // now guaranteed to be string
+          role: user.role,
         };
       },
     }),
   ],
+  cookies: {
+    sessionToken: {
+      name: 'handcrafted-haven.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: 'handcrafted-haven.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    callbackUrl: {
+      name: 'handcrafted-haven.callback-url',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
 });
