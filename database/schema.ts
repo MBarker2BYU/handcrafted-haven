@@ -1,8 +1,14 @@
-import { pgTable, text, varchar, timestamp } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  integer,
+  varchar,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  email: varchar("email").notNull().unique(),
-  password: varchar("password").notNull(),
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
+  role: varchar("role", { length: 50 }).default("user"),
   createdAt: timestamp("created_at").defaultNow(),
 });

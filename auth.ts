@@ -1,34 +1,68 @@
-import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import { db } from "@/database/db";
-import { users } from "./database/schema";
-import { eq } from "drizzle-orm";
-import bcrypt from "bcrypt";
+// /auth.ts
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+import NextAuth from 'next-auth';
+import { authConfig } from './auth.config';
+import Credentials from 'next-auth/providers/credentials';
+import { z } from 'zod';
+import type { User } from '@/app/lib/definitions';
+import bcrypt from 'bcrypt';
+import { db } from '@/database/db';
+import { users } from '@/database/schema';
+import { eq } from 'drizzle-orm';
+import { connect } from '@/database/db';
+
+// Connect once when the module is loaded
+await connect();
+
+async function getUser(email: string): Promise<User | undefined> {
+  try {
+    const result = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        password: users.password,
+        role: users.role,
+      })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    return result[0] ?? undefined;
+  } catch (error) {
+    console.error('Failed to fetch user:', error);
+    throw new Error('Failed to fetch user.');
+  }
+}
+
+export const { auth, signIn, signOut, handlers } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
-      name: "Credentials",
-      credentials: {
-        email: {},
-        password: {},
-      },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        const parsed = z
+          .object({
+            email: z.string().email(),
+            password: z.string().min(6),
+          })
+          .safeParse(credentials);
 
-        const [user] = await db
-            .select()
-            .from(users)
-            .where(eq(users.email, credentials.email));
+        if (!parsed.success) return null;
+
+        const { email, password } = parsed.data;
+        const user = await getUser(email);
 
         if (!user) return null;
 
-        const valid = await bcrypt.compare(credentials.password, user.password);
-        if (!valid) return null;
+        const passwordsMatch = await bcrypt.compare(password, user.password);
+        if (!passwordsMatch) return null;
 
-        return { id: user.id, email: user.email };
-        },
+        // Session only gets what actually exists in the DB
+        return {
+          id: user.id.toString(),       // NextAuth requires string ID
+          email: user.email,
+          role: user.role ?? 'user',
+        };
+      },
     }),
   ],
-  session: { strategy: "jwt" },
 });
