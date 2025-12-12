@@ -34,7 +34,7 @@ export async function registerAction(prevState: { message: string } | undefined,
     redirect: false,
   });
 
-  redirect('/login');
+  redirect('/');
 }
 
 export async function loginAction(prevState: { message: string } | undefined, formData: FormData) {
