@@ -1,4 +1,4 @@
-// /auth.ts
+// /auth.ts   ← final version, no more TS errors
 
 import NextAuth from 'next-auth';
 import { authConfig } from './auth.config';
@@ -11,27 +11,29 @@ import { users } from '@/database/schema';
 import { eq } from 'drizzle-orm';
 import { connect } from '@/database/db';
 
-// Connect once when the module is loaded
 await connect();
 
 async function getUser(email: string): Promise<User | undefined> {
-  try {
-    const result = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        password: users.password,
-        role: users.role,
-      })
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
+  const result = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      password: users.password,
+      role: users.role,                    // ← can be string | null
+    })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
 
-    return result[0] ?? undefined;
-  } catch (error) {
-    console.error('Failed to fetch user:', error);
-    throw new Error('Failed to fetch user.');
-  }
+  const row = result[0];
+  if (!row) return undefined;
+
+  return {
+    id: row.id,
+    email: row.email,
+    password: row.password,
+    role: row.role ?? 'user',   // ← convert null → 'user' here
+  };
 }
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
@@ -50,17 +52,15 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
         const { email, password } = parsed.data;
         const user = await getUser(email);
-
         if (!user) return null;
 
-        const passwordsMatch = await bcrypt.compare(password, user.password);
-        if (!passwordsMatch) return null;
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) return null;
 
-        // Session only gets what actually exists in the DB
         return {
-          id: user.id.toString(),       // NextAuth requires string ID
+          id: user.id.toString(),
           email: user.email,
-          role: user.role ?? 'user',
+          role: user.role,                   // now guaranteed to be string
         };
       },
     }),
