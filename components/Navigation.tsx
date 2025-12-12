@@ -1,19 +1,43 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const pathname = usePathname();
 
   const navItems = [
     { name: 'Home', href: '/' },
-    { name: 'Shop', href: '/shop' },
+    { name: 'Shop', href: '/products' },
+    { name: 'Categories', href: '/categories' },
     { name: 'Artisans', href: '/artisans' },
+    { name: 'Cart', href: '/cart' },
     { name: 'About', href: '/about' },
   ];
+
+  // Robust check for Handcrafted Haven session cookie (handles possible prefixes)
+  useEffect(() => {
+    const checkSession = () => {
+      const cookies = document.cookie.split(';');
+      const hasSession = cookies.some((item) => {
+        const cookie = item.trim();
+        return cookie.startsWith('handcrafted-haven.session-token=') ||
+               cookie.startsWith('__Secure-handcrafted-haven.session-token=') ||
+               cookie.startsWith('__Host-handcrafted-haven.session-token=');
+      });
+      setIsLoggedIn(hasSession);
+    };
+
+    checkSession();
+
+    // Re-check on navigation (post-login/logout redirect) + light polling fallback
+    const interval = setInterval(checkSession, 1000);
+
+    return () => clearInterval(interval);
+  }, [pathname]);
 
   const linkClasses = (href: string) =>
     `relative hover:scale-120 transition ${
@@ -39,12 +63,13 @@ export default function Navigation() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex gap-12 text-white text-lg font-semibold">
+          <nav className="hidden lg:flex items-center gap-12 text-white text-lg font-semibold">
             {navItems.map((item) => (
               <a key={item.name} href={item.href} className={linkClasses(item.href)}>
                 {item.name}
               </a>
             ))}
+            {/* Login/Logout - Desktop */}            
           </nav>
 
           {/* Hamburger */}
@@ -81,7 +106,7 @@ export default function Navigation() {
             >
               {item.name}
             </a>
-          ))}
+          ))}          
           <p className="text-7xl mt-8">O-H!</p>
         </nav>
       </div>
