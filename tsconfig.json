@@ -18,9 +18,16 @@
         "name": "next"
       }
     ],
+
     "paths": {
-      "@/*": ["./*"]
-    }
+      "@/*": ["./*"],
+      "better-sqlite3": ["./database/types/better-sqlite3.d.ts"]
+    },
+
+    "typeRoots": [
+      "./database/types",
+      "./node_modules/@types"
+    ]
   },
   "include": [
     "next-env.d.ts",
