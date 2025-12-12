@@ -1,10 +1,10 @@
-import { db, connect } from "./db";
+import { db } from "./db";
 import { users } from "./schema";
 import bcrypt from "bcrypt";
 import { eq } from "drizzle-orm";
 
 async function seed() {
-  await connect();
+  // await connect();
 
   console.log("Checking for existing admin...");
 
