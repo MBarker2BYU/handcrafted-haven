@@ -1,0 +1,11 @@
+// /database/index.ts
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  // Optional pool settings for Neon/Vercel
+  // max: 5,
+});
+
+export const db = drizzle(pool);
