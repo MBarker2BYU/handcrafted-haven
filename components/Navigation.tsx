@@ -39,7 +39,7 @@ export default function Navigation() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex gap-12 text-white text-lg font-semibold">
+          <nav className="hidden lg:flex gap-12 text-white text-lg font-semibold">
             {navItems.map((item) => (
               <a key={item.name} href={item.href} className={linkClasses(item.href)}>
                 {item.name}
